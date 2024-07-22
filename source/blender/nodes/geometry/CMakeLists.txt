@@ -50,6 +50,7 @@ set(SRC
   nodes/node_geo_curve_primitive_arc.cc
   nodes/node_geo_curve_primitive_bezier_segment.cc
   nodes/node_geo_curve_primitive_circle.cc
+  nodes/node_geo_curve_primitive_entasis.cc
   nodes/node_geo_curve_primitive_line.cc
   nodes/node_geo_curve_primitive_quadratic_bezier.cc
   nodes/node_geo_curve_primitive_quadrilateral.cc

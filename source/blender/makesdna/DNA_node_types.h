@@ -1725,6 +1725,9 @@ typedef struct NodeGeometryCurvePrimitiveLine {
   uint8_t mode;
 } NodeGeometryCurvePrimitiveLine;
 
+/*typedef struct NodeGeometryCurvePrimitiveEntasis {
+} NodeGeometryCurvePrimitiveEntasis;*/
+
 typedef struct NodeGeometryCurvePrimitiveBezierSegment {
   /** #GeometryNodeCurvePrimitiveBezierSegmentMode. */
   uint8_t mode;
