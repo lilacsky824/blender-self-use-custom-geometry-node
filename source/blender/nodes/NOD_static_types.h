@@ -320,6 +320,7 @@ DefNode(GeometryNode, GEO_NODE_CURVE_LENGTH, 0, "CURVE_LENGTH", CurveLength, "Cu
 DefNode(GeometryNode, GEO_NODE_CURVE_PRIMITIVE_ARC, 0, "CURVE_PRIMITIVE_ARC",CurveArc, "Arc", "Generate a poly spline arc")
 DefNode(GeometryNode, GEO_NODE_CURVE_PRIMITIVE_BEZIER_SEGMENT, 0, "CURVE_PRIMITIVE_BEZIER_SEGMENT", CurvePrimitiveBezierSegment, "Bézier Segment", "Generate a 2D Bézier spline from the given control points and handles")
 DefNode(GeometryNode, GEO_NODE_CURVE_PRIMITIVE_CIRCLE,0, "CURVE_PRIMITIVE_CIRCLE", CurvePrimitiveCircle, "Curve Circle", "Generate a poly spline circle")
+DefNode(GeometryNode, GEO_NODE_CURVE_PRIMITIVE_ENTASIS, 0, "CURVE_PRIMITIVE_ENTASIS", CurvePrimitiveEntasis, "卷殺折線", "生成卷殺折線")
 DefNode(GeometryNode, GEO_NODE_CURVE_PRIMITIVE_LINE, 0, "CURVE_PRIMITIVE_LINE", CurvePrimitiveLine, "Curve Line", "Generate a poly spline line with two points")
 DefNode(GeometryNode, GEO_NODE_CURVE_PRIMITIVE_QUADRATIC_BEZIER, 0, "CURVE_PRIMITIVE_QUADRATIC_BEZIER", CurveQuadraticBezier, "Quadratic Bézier", "Generate a poly spline in a parabola shape with control points positions")
 DefNode(GeometryNode, GEO_NODE_CURVE_PRIMITIVE_QUADRILATERAL, 0, "CURVE_PRIMITIVE_QUADRILATERAL", CurvePrimitiveQuadrilateral, "Quadrilateral", "Generate a polygon with four points")
