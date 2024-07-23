@@ -3,44 +3,39 @@
  * SPDX-License-Identifier: GPL-2.0-or-later */
 
 #include "BKE_curves.hh"
+#include "BLI_math_matrix.hh"
 
-#include "NOD_rna_define.hh"
+#include "GEO_transform.hh"
 
 #include "UI_interface.hh"
 #include "UI_resources.hh"
 
 #include "node_geometry_util.hh"
 
-namespace blender::nodes::node_geo_curve_primitive_line_cc {
+namespace blender::nodes::node_geo_curve_primitive_entasis_cc {
 
-NODE_STORAGE_FUNCS(NodeGeometryCurvePrimitiveLine)
-
+#define MAX_N 16
 static void node_declare(NodeDeclarationBuilder &b)
 {
-  auto enable_direction = [](bNode &node) {
-    node_storage(node).mode = GEO_NODE_CURVE_PRIMITIVE_LINE_MODE_DIRECTION;
-  };
-
+  b.add_input<decl::Int>("N")
+      .default_value(2)
+      .min(1)
+      .max(MAX_N)
+      .subtype(PROP_UNSIGNED)
+      .description("等分數");
   b.add_input<decl::Vector>("Start")
+      .default_value({0.0f, 0.0f, 0.0f})
       .subtype(PROP_TRANSLATION)
-      .description("Position of the first control point");
-  b.add_input<decl::Vector>("End")
-      .default_value({0.0f, 0.0f, 1.0f})
+      .description("起始點(P0)");
+  b.add_input<decl::Vector>("X Axis")
+      .default_value({9.0f, 0.0f, 0.0f})
       .subtype(PROP_TRANSLATION)
-      .description("Position of the second control point")
-      .make_available([](bNode &node) {
-        node_storage(node).mode = GEO_NODE_CURVE_PRIMITIVE_LINE_MODE_POINTS;
-      });
-  b.add_input<decl::Vector>("Direction")
-      .default_value({0.0f, 0.0f, 1.0f})
-      .description("Direction the line is going in. The length of this vector does not matter")
-      .make_available(enable_direction);
-  b.add_input<decl::Float>("Length")
-      .default_value(1.0f)
-      .subtype(PROP_DISTANCE)
-      .description("Distance between the two points")
-      .make_available(enable_direction);
-  b.add_output<decl::Geometry>("Curve");
+      .description("變換後的 X 軸向量");
+  b.add_input<decl::Vector>("Y Axis")
+      .default_value({0.0f, 9.0f, 0.0f})
+      .subtype(PROP_TRANSLATION)
+      .description("變換後的 Y 軸向量");
+  b.add_output<decl::Geometry>("卷殺折線");
 }
 
 static void node_layout(uiLayout *layout, bContext * /*C*/, PointerRNA *ptr)
@@ -48,116 +43,53 @@ static void node_layout(uiLayout *layout, bContext * /*C*/, PointerRNA *ptr)
   uiItemR(layout, ptr, "mode", UI_ITEM_R_EXPAND, nullptr, ICON_NONE);
 }
 
-static void node_init(bNodeTree * /*tree*/, bNode *node)
+//static void node_init(bNodeTree * /*tree*/, bNode *node){}
+
+//static void node_update(bNodeTree *ntree, bNode *node){}
+
+static Curves *create_entasis_line_curve(const int n, const float3 start, const float3 xAxis, const float3 yAxis)
 {
-  NodeGeometryCurvePrimitiveLine *data = MEM_cnew<NodeGeometryCurvePrimitiveLine>(__func__);
-
-  data->mode = GEO_NODE_CURVE_PRIMITIVE_LINE_MODE_POINTS;
-  node->storage = data;
-}
-
-static void node_update(bNodeTree *ntree, bNode *node)
-{
-  const NodeGeometryCurvePrimitiveLine &storage = node_storage(*node);
-  const GeometryNodeCurvePrimitiveLineMode mode = (GeometryNodeCurvePrimitiveLineMode)storage.mode;
-
-  bNodeSocket *p2_socket = static_cast<bNodeSocket *>(node->inputs.first)->next;
-  bNodeSocket *direction_socket = p2_socket->next;
-  bNodeSocket *length_socket = direction_socket->next;
-
-  bke::nodeSetSocketAvailability(
-      ntree, p2_socket, mode == GEO_NODE_CURVE_PRIMITIVE_LINE_MODE_POINTS);
-  bke::nodeSetSocketAvailability(
-      ntree, direction_socket, mode == GEO_NODE_CURVE_PRIMITIVE_LINE_MODE_DIRECTION);
-  bke::nodeSetSocketAvailability(
-      ntree, length_socket, mode == GEO_NODE_CURVE_PRIMITIVE_LINE_MODE_DIRECTION);
-}
-
-static Curves *create_point_line_curve(const float3 start, const float3 end)
-{
-  Curves *curves_id = bke::curves_new_nomain_single(2, CURVE_TYPE_POLY);
+  Curves *curves_id = bke::curves_new_nomain_single(n + 1, CURVE_TYPE_POLY);
   bke::CurvesGeometry &curves = curves_id->geometry.wrap();
 
-  curves.positions_for_write().first() = start;
-  curves.positions_for_write().last() = end;
+  float sn = (n * (n + 1)) >> 1;
 
-  return curves_id;
-}
+  float4x4 trs = float4x4(float4(xAxis), float4(yAxis), float4(math::cross(xAxis, yAxis)), float4(start));
 
-static Curves *create_direction_line_curve(const float3 start,
-                                           const float3 direction,
-                                           const float length)
-{
-  Curves *curves_id = bke::curves_new_nomain_single(2, CURVE_TYPE_POLY);
-  bke::CurvesGeometry &curves = curves_id->geometry.wrap();
-
-  curves.positions_for_write().first() = start;
-  curves.positions_for_write().last() = math::normalize(direction) * length + start;
+  MutableSpan<float3> positions = curves.positions_for_write();
+  for(const int k : IndexRange(n + 1))
+  {
+    float sk = (k * (k + 1)) >> 1;
+    float tk = (k * (2 * n - k + 1)) >> 1;
+    float3 pk = float3(sk, tk, 0) / sn;
+    positions[k] = math::transform_point(trs, pk);
+  }
 
   return curves_id;
 }
 
 static void node_geo_exec(GeoNodeExecParams params)
 {
-  const NodeGeometryCurvePrimitiveLine &storage = node_storage(params.node());
-  const GeometryNodeCurvePrimitiveLineMode mode = (GeometryNodeCurvePrimitiveLineMode)storage.mode;
-
   Curves *curves = nullptr;
-  if (mode == GEO_NODE_CURVE_PRIMITIVE_LINE_MODE_POINTS) {
-    curves = create_point_line_curve(params.extract_input<float3>("Start"),
-                                     params.extract_input<float3>("End"));
-  }
-  else if (mode == GEO_NODE_CURVE_PRIMITIVE_LINE_MODE_DIRECTION) {
-    curves = create_direction_line_curve(params.extract_input<float3>("Start"),
-                                         params.extract_input<float3>("Direction"),
-                                         params.extract_input<float>("Length"));
-  }
+    curves = create_entasis_line_curve(
+      params.extract_input<int>("N"),
+      params.extract_input<float3>("Start"),
+      params.extract_input<float3>("X Axis"),
+      params.extract_input<float3>("Y Axis"));
 
-  params.set_output("Curve", GeometrySet::from_curves(curves));
-}
-
-static void node_rna(StructRNA *srna)
-{
-  static const EnumPropertyItem mode_items[] = {
-      {GEO_NODE_CURVE_PRIMITIVE_LINE_MODE_POINTS,
-       "POINTS",
-       ICON_NONE,
-       "Points",
-       "Define the start and end points of the line"},
-      {GEO_NODE_CURVE_PRIMITIVE_LINE_MODE_DIRECTION,
-       "DIRECTION",
-       ICON_NONE,
-       "Direction",
-       "Define a line with a start point, direction and length"},
-      {0, nullptr, 0, nullptr, nullptr},
-  };
-
-  RNA_def_node_enum(srna,
-                    "mode",
-                    "Mode",
-                    "Method used to determine radius and placement",
-                    mode_items,
-                    NOD_storage_enum_accessors(mode),
-                    GEO_NODE_CURVE_PRIMITIVE_LINE_MODE_POINTS);
-}
+  params.set_output("卷殺折線", GeometrySet::from_curves(curves));
+}  
 
 static void node_register()
 {
   static blender::bke::bNodeType ntype;
-  geo_node_type_base(&ntype, GEO_NODE_CURVE_PRIMITIVE_LINE, "Curve Line", NODE_CLASS_GEOMETRY);
-  ntype.initfunc = node_init;
-  ntype.updatefunc = node_update;
-  blender::bke::node_type_storage(&ntype,
-                                  "NodeGeometryCurvePrimitiveLine",
-                                  node_free_standard_storage,
-                                  node_copy_standard_storage);
+
+  geo_node_type_base(&ntype, GEO_NODE_CURVE_PRIMITIVE_ENTASIS, "卷殺折線", NODE_CLASS_GEOMETRY);
   ntype.declare = node_declare;
   ntype.geometry_node_execute = node_geo_exec;
   ntype.draw_buttons = node_layout;
   blender::bke::nodeRegisterType(&ntype);
-
-  node_rna(ntype.rna_ext.srna);
 }
 NOD_REGISTER_NODE(node_register)
 
-}  // namespace blender::nodes::node_geo_curve_primitive_line_cc
+}  // namespace blender::nodes::node_geo_curve_primitive_entasis_cc
