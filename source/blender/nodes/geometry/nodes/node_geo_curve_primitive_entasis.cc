@@ -38,11 +38,6 @@ static void node_declare(NodeDeclarationBuilder &b)
   b.add_output<decl::Geometry>("卷殺折線");
 }
 
-static void node_layout(uiLayout *layout, bContext * /*C*/, PointerRNA *ptr)
-{
-  uiItemR(layout, ptr, "mode", UI_ITEM_R_EXPAND, nullptr, ICON_NONE);
-}
-
 //static void node_init(bNodeTree * /*tree*/, bNode *node){}
 
 //static void node_update(bNodeTree *ntree, bNode *node){}
@@ -87,7 +82,6 @@ static void node_register()
   geo_node_type_base(&ntype, GEO_NODE_CURVE_PRIMITIVE_ENTASIS, "卷殺折線", NODE_CLASS_GEOMETRY);
   ntype.declare = node_declare;
   ntype.geometry_node_execute = node_geo_exec;
-  ntype.draw_buttons = node_layout;
   blender::bke::nodeRegisterType(&ntype);
 }
 NOD_REGISTER_NODE(node_register)
