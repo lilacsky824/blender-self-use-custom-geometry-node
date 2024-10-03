@@ -3,12 +3,6 @@
  * SPDX-License-Identifier: GPL-2.0-or-later */
 
 #include "BKE_curves.hh"
-#include "BLI_math_matrix.hh"
-
-#include "GEO_transform.hh"
-
-#include "UI_interface.hh"
-#include "UI_resources.hh"
 
 #include "node_geometry_util.hh"
 
