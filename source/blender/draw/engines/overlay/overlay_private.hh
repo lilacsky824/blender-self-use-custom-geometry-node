@@ -379,6 +379,7 @@ struct OVERLAY_PrivateData {
   struct {
     bool do_points;
     bool do_zbufclip;
+    int handle_display;
   } edit_curves;
   struct {
     bool use_weight;
@@ -616,6 +617,7 @@ void OVERLAY_edit_grease_pencil_cache_init(OVERLAY_Data *vedata);
 void OVERLAY_edit_grease_pencil_cache_populate(OVERLAY_Data *vedata, Object *ob);
 void OVERLAY_sculpt_grease_pencil_cache_populate(OVERLAY_Data *vedata, Object *ob);
 void OVERLAY_weight_grease_pencil_cache_populate(OVERLAY_Data *vedata, Object *ob);
+void OVERLAY_vertex_grease_pencil_cache_populate(OVERLAY_Data *vedata, Object *ob);
 void OVERLAY_grease_pencil_draw(OVERLAY_Data *vedata);
 void OVERLAY_edit_grease_pencil_draw(OVERLAY_Data *vedata);
 
@@ -793,6 +795,7 @@ GPUShader *OVERLAY_shader_edit_curve_handle();
 GPUShader *OVERLAY_shader_edit_curve_point();
 GPUShader *OVERLAY_shader_edit_curve_wire();
 GPUShader *OVERLAY_shader_edit_curves_handle();
+GPUShader *OVERLAY_shader_edit_curves_point();
 GPUShader *OVERLAY_shader_edit_gpencil_guide_point();
 GPUShader *OVERLAY_shader_edit_gpencil_point();
 GPUShader *OVERLAY_shader_edit_gpencil_wire();
