@@ -2,6 +2,11 @@
 #
 # SPDX-License-Identifier: GPL-2.0-or-later
 
+__all__ = (
+    "xml_file_run",
+    "xml_file_write",
+)
+
 import bpy
 
 
@@ -246,7 +251,7 @@ def rna2xml(
 def xml2rna(
         root_xml, *,
         root_rna=None,  # must be set
-        secure_types=None,  # `Optional[Set[str]]`
+        secure_types=None,  # `Set[str] | None`
 ):
 
     def xml2rna_node(xml_node, value):
@@ -377,7 +382,7 @@ def xml_file_run(
         context,
         filepath,
         rna_map,
-        secure_types=None,  # `Optional[Set[str]]`
+        secure_types=None,  # `set[str] | None`
 ):
     import xml.dom.minidom
 

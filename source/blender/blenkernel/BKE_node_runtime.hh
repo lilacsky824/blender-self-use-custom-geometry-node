@@ -27,6 +27,7 @@ struct bNodeTree;
 
 namespace blender::nodes {
 struct FieldInferencingInterface;
+struct GeometryNodesEvalDependencies;
 class NodeDeclaration;
 struct GeometryNodesLazyFunctionGraphInfo;
 namespace anonymous_attribute_lifetime {
@@ -194,6 +195,14 @@ class bNodeTreeRuntime : NonCopyable, NonMovable {
    */
   Set<const bNodeSocket *> sockets_on_active_gizmo_paths;
 
+  /**
+   * Cache of dependencies used by the node tree itself. Does not account for data that's passed
+   * into the node tree from the outside.
+   * NOTE: The node tree may reference additional data-blocks besides the ones included here. But
+   * those are not used when the node tree is evaluated by Geometry Nodes.
+   */
+  std::unique_ptr<nodes::GeometryNodesEvalDependencies> geometry_nodes_eval_dependencies;
+
   /** Only valid when #topology_cache_is_dirty is false. */
   Vector<bNodeLink *> links;
   Vector<bNodeSocket *> sockets;
@@ -262,16 +271,19 @@ class bNodeSocketRuntime : NonCopyable, NonMovable {
   int index_in_inout_sockets = -1;
 };
 
+struct bNodePanelExtent {
+  float min_y;
+  float max_y;
+  bool fill_node_end = false;
+};
+
 class bNodePanelRuntime : NonCopyable, NonMovable {
  public:
   /* The vertical location of the panel in the tree, calculated while drawing the nodes and invalid
    * if the node tree hasn't been drawn yet. In the node tree's "world space" (the same as
    * #bNode::runtime::totr). */
-  float location_y;
-  /* Vertical start location of the panel content. */
-  float min_content_y;
-  /* Vertical end location of the panel content. */
-  float max_content_y;
+  std::optional<float> header_center_y;
+  std::optional<bNodePanelExtent> content_extent;
 };
 
 /**

@@ -12,7 +12,6 @@
 #include "mtl_backend.hh"
 #include "mtl_batch.hh"
 #include "mtl_context.hh"
-#include "mtl_drawlist.hh"
 #include "mtl_framebuffer.hh"
 #include "mtl_immediate.hh"
 #include "mtl_index_buffer.hh"
@@ -52,11 +51,6 @@ Context *MTLBackend::context_alloc(void *ghost_window, void *ghost_context)
 Batch *MTLBackend::batch_alloc()
 {
   return new MTLBatch();
-};
-
-DrawList *MTLBackend::drawlist_alloc(int list_length)
-{
-  return new MTLDrawList(list_length);
 };
 
 Fence *MTLBackend::fence_alloc()
@@ -306,15 +300,15 @@ static int get_num_performance_cpu_cores(id<MTLDevice> device)
 
   if (is_apple_sillicon(device)) {
     /* On Apple Silicon query the number of performance cores */
-    if (sysctlbyname("hw.perflevel0.logicalcpu", &sysctl_buffer, &sysctl_buffer_length, NULL, 0) ==
-        0)
+    if (sysctlbyname(
+            "hw.perflevel0.logicalcpu", &sysctl_buffer, &sysctl_buffer_length, nullptr, 0) == 0)
     {
       num_performance_cores = sysctl_buffer[0];
     }
   }
   else {
     /* On Intel just return the logical core count */
-    if (sysctlbyname("hw.logicalcpu", &sysctl_buffer, &sysctl_buffer_length, NULL, 0) == 0) {
+    if (sysctlbyname("hw.logicalcpu", &sysctl_buffer, &sysctl_buffer_length, nullptr, 0) == 0) {
       num_performance_cores = sysctl_buffer[0];
     }
   }
@@ -330,8 +324,8 @@ static int get_num_efficiency_cpu_cores(id<MTLDevice> device)
     int num_efficiency_cores = -1;
     unsigned char sysctl_buffer[SYSCTL_BUF_LENGTH];
     size_t sysctl_buffer_length = SYSCTL_BUF_LENGTH;
-    if (sysctlbyname("hw.perflevel1.logicalcpu", &sysctl_buffer, &sysctl_buffer_length, NULL, 0) ==
-        0)
+    if (sysctlbyname(
+            "hw.perflevel1.logicalcpu", &sysctl_buffer, &sysctl_buffer_length, nullptr, 0) == 0)
     {
       num_efficiency_cores = sysctl_buffer[0];
     }
@@ -339,9 +333,7 @@ static int get_num_efficiency_cpu_cores(id<MTLDevice> device)
     BLI_assert(num_efficiency_cores != -1);
     return num_efficiency_cores;
   }
-  else {
-    return 0;
-  }
+  return 0;
 }
 
 bool MTLBackend::metal_is_supported()
@@ -500,6 +492,7 @@ void MTLBackend::capabilities_init(MTLContext *ctx)
    * Can use argument buffers if a higher limit is required. */
   GCaps.max_shader_storage_buffer_bindings = 14;
   GCaps.max_storage_buffer_size = size_t(ctx->device.maxBufferLength);
+  GCaps.storage_buffer_alignment = 256; /* TODO(fclem): But also unused. */
 
   GCaps.max_work_group_count[0] = 65535;
   GCaps.max_work_group_count[1] = 65535;
